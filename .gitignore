@@ -1,0 +1,7 @@
+node_modules/*
+
+# Node / NPM 
+npm-debug.log
+
+# OS-specific wierdness
+.DS_Store

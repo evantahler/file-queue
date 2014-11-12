@@ -1,0 +1,37 @@
+{
+  "author": "Evan Tahler <evantahler@gmail.com>",
+  "name": "file-queue",
+  "description": "a Resque-like queue system that uses flat files",
+  "version": "0.0.1",
+  "homepage": "http://github.com/evantahler/file-queue",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/evantahler/file-queue.git"
+  },
+  "main": "index.js",
+  "keywords": [
+    "queue",
+    "bus",
+    "resque",
+    "message",
+    "file",
+    "delayed",
+    "distributed"
+  ],
+  "engines": {
+    "node": ">=0.8.0"
+  },
+  "dependencies": {
+    "microtime": "^1.0.1",
+    "mkdirp": "^0.5.0",
+    "node-uuid": "^1.4.1"
+  },
+  "devDependencies": {
+    "mocha": "latest",
+    "should": "latest",
+    "fakeredis": "latest"
+  },
+  "scripts": {
+    "test": "mocha"
+  }
+}
