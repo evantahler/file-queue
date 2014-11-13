@@ -1,5 +1,6 @@
 # File-Queue
 [![Build Status](https://travis-ci.org/evantahler/file-queue.svg?branch=master)](https://travis-ci.org/evantahler/file-queue)
+
 A [resque-like](https://github.com/resque/resque) queue system based on flat files.
 
 ## What?
