@@ -9,12 +9,12 @@ File-Queue starts with persistence at its core. Every operation *is* a disk oper
 ## Pros + Cons
 ### Pros
 - Persistence every operation
-- Easier introspection (ls, grep, and all the normal *nix tools)
+- Easier introspection (`ls`, `grep`, and all the normal *nix tools)
 - Larger storage (doesn't need to fit in RAM)
 
 ### Cons
-- Slower than talking with redis
-- Requires a mounted remote drive (not possible in heroku-like deployments)
+- Often slower than communicating with redis
+- Requires a mounted remote drive (usually not possible in heroku-like deployments)
 
 ## Benchmarks (compared to ruby-resque with a local redis server)
 TODO
