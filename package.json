@@ -24,12 +24,12 @@
   "dependencies": {
     "microtime": "^1.0.1",
     "node-uuid": "^1.4.1",
-    "node-fs-extra": "^0.8.1"
+    "node-fs-extra": "^0.8.1",
+    "async": "^0.9.0"
   },
   "devDependencies": {
     "mocha": "latest",
-    "should": "latest",
-    "async": "0.9.0"
+    "should": "latest"
   },
   "scripts": {
     "test": "mocha"
