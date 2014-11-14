@@ -1,34 +1,30 @@
-var should  = require('should');
-var fs      = require('node-fs-extra');
-var path    = require('path');
-var async   = require('async');
-var testDir = '/tmp/test';
+var should     = require('should');
+var fs         = require('node-fs-extra');
+var path       = require('path');
+var async      = require('async');
+var timekeeper = require('timekeeper');
+var testDir    = '/tmp/test';
 
 var FileQueue = require(__dirname + path.sep + '..' + path.sep + 'index.js');
 var queue = new FileQueue.queue(testDir);
 var originalGetTime = Date.prototype.getTime;
 
-var cleanup = function(callback){
-  try{
-    fs.remove(testDir, function(){
-      callback();
-    });
-  }catch(e){
-    if(e.code !== 'ENOENT'){ throw e; }
-  }
-};
-
 describe('queue', function(){
 
   afterEach(function(){
-    Date.prototype.getTime = originalGetTime;
+    timekeeper.reset();
   });
 
   beforeEach(function(done){
-    cleanup(done);
-    // hack to lock in time; to account for time drift in tests
-    var now = new Date().getTime();
-    Date.prototype.getTime = function(){ return now; };
+    timekeeper.freeze(new Date().getTime());
+    try{
+      fs.remove(testDir, function(){
+        done();
+      });
+    }catch(e){
+      if(e.code !== 'ENOENT'){ throw e; }
+      done();
+    }
   });
 
   it('should save the default path', function(){
