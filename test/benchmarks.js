@@ -1,5 +1,5 @@
 var should     = require('should');
-var fs         = require('node-fs-extra');
+var fs         = require('fs-extra');
 var path       = require('path');
 var async      = require('async');
 var timekeeper = require('timekeeper');
@@ -20,10 +20,12 @@ describe('benchmarks', function(){
     timekeeper.freeze(new Date().getTime());
     try{
       fs.remove(testDir, function(){
+        queue.ensureDirs();
         done();
       });
     }catch(e){
       if(e.code !== 'ENOENT'){ throw e; }
+      queue.ensureDirs();
       done();
     }
   });

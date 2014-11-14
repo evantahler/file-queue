@@ -1,5 +1,5 @@
 var should     = require('should');
-var fs         = require('node-fs-extra');
+var fs         = require('fs-extra');
 var path       = require('path');
 var async      = require('async');
 var timekeeper = require('timekeeper');
@@ -18,10 +18,12 @@ describe('queue', function(){
     timekeeper.freeze(new Date().getTime());
     try{
       fs.remove(testDir, function(){
+        queue.ensureDirs();
         done();
       });
     }catch(e){
       if(e.code !== 'ENOENT'){ throw e; }
+      queue.ensureDirs();
       done();
     }
   });
@@ -205,9 +207,50 @@ describe('queue', function(){
     });
   });
 
+  it('can delete an item from all delayed imestamps', function(done){
+    var now = new Date().getTime();
+    async.parallel([
+      function(callback){ queue.enqueueAt(now + 1000, 'test_queue_a', 'doStuffLater', {}, callback); },
+      function(callback){ queue.enqueueAt(now + 2000, 'test_queue_c', 'doStuffLater', {}, callback); },
+      function(callback){ queue.enqueueAt(now + 3000, 'test_queue_a', 'doStuffLater', {}, callback); },
+    ], function(err){
+      should.not.exist(err);
+      queue.delFromTimestamp('test_queue_a', 'doStuffLater', {}, 999, function(err, deletedFiles){
+        should.not.exist(err);
+        deletedFiles.length.should.equal(2);
+        done();
+      });
+    });
+  });
 
-  it('can delete an item from a timestamp');
-  it('can promote ready delayed items');
+  it('can promote ready delayed items', function(done){
+    var now = new Date().getTime();
+    async.parallel([
+      function(callback){ queue.enqueueAt(now + 1000, 'test_queue_a', 'doStuffLater', {}, callback); },
+      function(callback){ queue.enqueueAt(now - 1000, 'test_queue_a', 'doStuffLater', {}, callback); },
+      function(callback){ queue.enqueueAt(now - 1000, 'test_queue_a', 'doStuffLater', {}, callback); },
+    ], function(err){
+      should.not.exist(err);
+      queue.queues(function(err, queues){
+        queues.length.should.equal(0);
+        
+        queue.promoteDelayed(function(){ // once to move the file
+        queue.promoteDelayed(function(){ // again to clear the now-empty old timestamp
+          queue.timestamps(function(err, timestamps){
+            timestamps.length.should.equal(1);
+            timestamps.indexOf(Math.floor(now/1000) + 1).should.equal(0);
+            queue.queues(function(err, queues){
+              queues.length.should.equal(1);
+              queues[0].should.equal('test_queue_a');
+              done();
+            });
+          });
+        });
+        });
+      });
+    });
+  });
+
   it('will not promote early delayed items');
   it('can claim an item (basic)');
   it('can claim an item (contention)');
