@@ -193,8 +193,7 @@ describe('queue', function(){
     ], function(err){
       queue.length('test_queue_a', function(err, length){
         length.should.equal(3);
-        var payload = queue.utils.encode('test_queue_a', 'doStuffLater', {a: 1});
-        queue.delFromQueue(payload, 'test_queue_a', 999, function(err, deletedFiles){
+        queue.delFromQueue('test_queue_a', 'doStuffLater', {a:1}, 999, function(err, deletedFiles){
           should.not.exist(err);
           deletedFiles.length.should.equal(2);
           queue.length('test_queue_a', function(err, length){
