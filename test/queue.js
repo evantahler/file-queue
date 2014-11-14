@@ -7,7 +7,6 @@ var testDir    = '/tmp/test';
 
 var FileQueue = require(__dirname + path.sep + '..' + path.sep + 'index.js');
 var queue = new FileQueue.queue(testDir);
-var originalGetTime = Date.prototype.getTime;
 
 describe('queue', function(){
 
@@ -48,24 +47,6 @@ describe('queue', function(){
       bodyPayload.args[0].b.should.equal(2);
 
       done();
-    });
-  });
-
-  it('can save many jobs quickly without a name collision', function(done){
-    var i = 0;
-    var funcs = [];
-    while(i < 100){
-      funcs.push(function(callback){
-        queue.enqueue('test_queue', 'doStuffLater', {a: 1, b: 2}, function(){ callback(); });
-      });
-      i++;
-    }
-    async.parallel(funcs, function(){
-      fs.readdir(testDir + path.sep + 'queues' + path.sep + 'test_queue', function(err, files){
-        should.not.exist(err);
-        files.length.should.equal(100);
-        done();
-      });
     });
   });
 
@@ -169,10 +150,64 @@ describe('queue', function(){
     });
   });
 
-  it('can inspect timestamp length');
-  it('can delte a queue');
-  it('can delte an item from a queue');
-  it('can delte an item from a timestamp');
+  it('can inspect timestamp length', function(done){
+    var now = new Date().getTime();
+    async.parallel([
+      function(callback){ queue.enqueueAt(now + 1000, 'test_queue_a', 'doStuffLater', {}, callback); },
+      function(callback){ queue.enqueueAt(now + 1000, 'test_queue_b', 'doStuffLater', {}, callback); },
+      function(callback){ queue.enqueueAt(now + 1000, 'test_queue_c', 'doStuffLater', {}, callback); },
+    ], function(err){
+      should.not.exist(err);
+      queue.timestampLength(Math.floor(now/1000) + 1, function(err, length){
+        should.not.exist(err);
+        length.should.equal(3);
+        done();
+      });
+    });
+  });
+
+  it('can delte a queue', function(done){
+    async.parallel([
+      function(callback){ queue.enqueue('test_queue_a', 'doStuffLater', {}, callback); },
+    ], function(err){
+      queue.queues(function(err, queues){
+        queues.indexOf('test_queue_a').should.equal(0);
+        queue.del('test_queue_a', function(err){
+          should.not.exist(err);
+          queue.queues(function(err, queues){
+            queue.queues(function(err, queues){
+              queues.length.should.equal(0);
+              done();
+            });
+          });
+        });
+      });
+    });
+  });
+
+  it('can delete an item from a queue', function(done){
+    async.parallel([
+      function(callback){ queue.enqueue('test_queue_a', 'doStuffLater', {a: 1}, callback); },
+      function(callback){ queue.enqueue('test_queue_a', 'doStuffLater', {a: 1}, callback); },
+      function(callback){ queue.enqueue('test_queue_a', 'doStuffLater', {b: 2}, callback); },
+    ], function(err){
+      queue.length('test_queue_a', function(err, length){
+        length.should.equal(3);
+        var payload = queue.utils.encode('test_queue_a', 'doStuffLater', {a: 1});
+        queue.delFromQueue(payload, 'test_queue_a', 999, function(err, deletedFiles){
+          should.not.exist(err);
+          deletedFiles.length.should.equal(2);
+          queue.length('test_queue_a', function(err, length){
+            length.should.equal(1);
+            done();
+          });
+        });
+      });
+    });
+  });
+
+
+  it('can delete an item from a timestamp');
   it('can promote ready delayed items');
   it('will not promote early delayed items');
   it('can claim an item (basic)');
