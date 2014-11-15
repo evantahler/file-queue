@@ -52,6 +52,11 @@ describe('queue', function(){
     });
   });
 
+  it('can get a paginated list of normal enqueued jobs');
+  it('can read the payload of normal job');
+  it('can get a paginated list of delayed jobs');
+  it('can read the payload of an delayed job');
+
   it('can save a job for later (enqueueAt)', function(done){
     var now = new Date().getTime();
     queue.enqueueAt((now + 100), 'test_queue', 'doStuffLater', {a: 1, b: 2}, function(err, filename, payload){
@@ -223,7 +228,7 @@ describe('queue', function(){
     });
   });
 
-  it('can promote ready delayed items', function(done){
+  it('can promote ready delayed items (and leave future ones)', function(done){
     var now = new Date().getTime();
     async.parallel([
       function(callback){ queue.enqueueAt(now + 1000, 'test_queue_a', 'doStuffLater', {}, callback); },
@@ -251,8 +256,40 @@ describe('queue', function(){
     });
   });
 
-  it('will not promote early delayed items');
-  it('can claim an item (basic)');
+  it('can claim an item (basic)', function(done){
+    async.parallel([
+      function(callback){ queue.enqueue('test_queue_a', 'doStuffLater', {a: 1}, callback); },
+      function(callback){ queue.enqueue('test_queue_a', 'doStuffLater', {b: 2}, callback); },
+    ], function(err){
+      queue.length('test_queue_a', function(err, length){
+        length.should.equal(2);
+        queue.claimNext('testWorker', 'test_queue_a', function(err, job){
+          should.not.exist(err);
+          job.args[0].a.should.equal(1);
+          queue.length('test_queue_a', function(err, length){
+            length.should.equal(1);
+            done();
+          });
+        });
+      });
+    });
+  });
+
   it('can claim an item (contention)');
+
+  it('can list workers and what they are working on', function(done){
+    async.parallel([
+      function(callback){ queue.enqueue('test_queue_a', 'doStuffLater', {a: 1}, callback); },
+    ], function(err){
+      queue.claimNext('testWorker', 'test_queue_a', function(err, job){
+        queue.workers(function(err, workers){
+          workers.testWorker.class.should.equal('doStuffLater');
+          workers.testWorker.queue.should.equal('test_queue_a');
+          workers.testWorker.args[0].a.should.equal(1);
+          done();
+        });
+      });
+    });
+  });
 
 });
