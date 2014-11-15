@@ -19,7 +19,7 @@
     "distributed"
   ],
   "engines": {
-    "node": ">=0.8.0"
+    "node": ">=0.10.0"
   },
   "dependencies": {
     "node-uuid": "1.4.1",
