@@ -52,11 +52,6 @@ describe('queue', function(){
     });
   });
 
-  it('can get a paginated list of normal enqueued jobs');
-  it('can read the payload of normal job');
-  it('can get a paginated list of delayed jobs');
-  it('can read the payload of an delayed job');
-
   it('can save a job for later (enqueueAt)', function(done){
     var now = new Date().getTime();
     queue.enqueueAt((now + 100), 'test_queue', 'doStuffLater', {a: 1, b: 2}, function(err, filename, payload){
@@ -173,6 +168,58 @@ describe('queue', function(){
     });
   });
 
+  it('can get a list of normal enqueued jobs', function(done){
+    async.parallel([
+      function(callback){ queue.enqueue('test_queue_a', 'doStuffLater', {}, callback); },
+      function(callback){ queue.enqueue('test_queue_a', 'doStuffLater', {}, callback); },
+      function(callback){ queue.enqueue('test_queue_a', 'doStuffLater', {}, callback); },
+    ], function(err){
+      should.not.exist(err);
+      queue.jobs('test_queue_a', function(err, jobs){
+        should.not.exist(err);
+        jobs.length.should.equal(3);
+        done();
+      });
+    });
+  });
+
+  it('can get a list of delayed jobs for a timestamp', function(done){
+    var now = new Date().getTime();
+    async.parallel([
+      function(callback){ queue.enqueueAt(now + 1000, 'test_queue_a', 'doStuffLater', {}, callback); },
+      function(callback){ queue.enqueueAt(now + 1000, 'test_queue_b', 'doStuffLater', {}, callback); },
+      function(callback){ queue.enqueueAt(now + 1000, 'test_queue_c', 'doStuffLater', {}, callback); },
+    ], function(err){
+      should.not.exist(err);
+      queue.timestampJobs(Math.floor(now/1000) + 1, function(err, jobs){
+        should.not.exist(err);
+        jobs.length.should.equal(3);
+        done();
+      });
+    });
+  });
+
+  it('can read the payload of normal job', function(done){
+    queue.enqueue('test_queue_a', 'doStuffLater', {}, function(err, filename, payload){
+      queue.readJob('test_queue_a', filename.split('.')[0], function(err, data){
+        data.class.should.equal('doStuffLater');
+        data.queue.should.equal('test_queue_a');
+        done();
+      });
+    });
+  });
+
+  it('can read the payload of an delayed job', function(done){
+    var now = new Date().getTime();
+    queue.enqueueAt(now + 1000, 'test_queue_a', 'doStuffLater', {}, function(err, filename, payload){
+      queue.readTimestampJob(Math.floor(now/1000) + 1, filename.split('.')[0], function(err, data){
+        data.class.should.equal('doStuffLater');
+        data.queue.should.equal('test_queue_a');
+        done();
+      });
+    });
+  });
+
   it('can delte a queue', function(done){
     async.parallel([
       function(callback){ queue.enqueue('test_queue_a', 'doStuffLater', {}, callback); },
@@ -275,7 +322,34 @@ describe('queue', function(){
     });
   });
 
-  it('can claim an item (contention)');
+  it('can claim an item (contention, no errors)', function(done){
+    async.parallel([
+      function(callback){ queue.enqueue('test_queue_a', 'doStuffLater', {a: 1}, callback); },
+    ], function(err){
+
+      async.parallel([
+        function(callback){
+          queue.claimNext('testWorker1', 'test_queue_a', callback);
+        },
+        function(callback){
+          queue.claimNext('testWorker2', 'test_queue_a', callback);
+        },
+        function(callback){
+          queue.claimNext('testWorker3', 'test_queue_a', callback);
+        },
+      ], function(err, data){
+        should.not.exist(err);
+        data.length.should.equal(3);
+        data[0].class.should.equal('doStuffLater');
+        should.equal(data[1], null);
+        should.equal(data[2], null);
+        queue.length('test_queue_a', function(err, length){
+          length.should.equal(0);
+          done();
+        });
+      });
+    });
+  });
 
   it('can list workers and what they are working on', function(done){
     async.parallel([
