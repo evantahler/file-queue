@@ -6,7 +6,7 @@ A [resque-like](https://github.com/resque/resque) queue system based on flat fil
 ## What?
 Many applications rely on a distributed queue to process delayed jobs and schedules.  Historically, these systems are based on a remote database for persistence.  They allow for high-throughput and atomic operations.  However, there are times when durability might mater more than speed.  
 
-File-Queue starts with persistence at its core. Every operation *is* a disk operation, and all state information *is* a file.  There are many great ways to mount a remote file system to your application servers.  Let them handle the heavy lifting.
+File-Queue starts with persistence at its core. Every operation *is* a disk operation, and all state information *is* a file.  There are many great ways to **mount a remote file system** (NFS, S3, Fuse, etc) to your application servers.  Let them handle the heavy lifting.
 
 ## Pros + Cons
 ### Pros
